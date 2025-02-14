@@ -28,12 +28,6 @@ export default function AuthPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [defaultValue, setDefaultValue] = useState<"login" | "register">("login");
 
-  // Redirect if already logged in
-  if (session) {
-    navigate("/");
-    return null;
-  }
-
   const loginForm = useForm<z.infer<typeof loginSchema>>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
@@ -69,6 +63,12 @@ export default function AuthPage() {
     } finally {
       setIsLoading(false);
     }
+  }
+
+  // Handle session redirect without early return
+  if (session) {
+    navigate("/");
+    return null;
   }
 
   return (
