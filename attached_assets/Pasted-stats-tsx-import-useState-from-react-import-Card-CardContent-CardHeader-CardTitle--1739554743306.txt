@@ -1,0 +1,104 @@
+stats.tsx:
+
+import { useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { AlertCircle, Package, ShoppingCart, Truck, DollarSign, Plus, Minus } from "lucide-react";
+import { format } from "date-fns";
+
+export function Stats() {
+  const [dollarRate, setDollarRate] = useState(1075.40);
+  const [lastUpdate, setLastUpdate] = useState(new Date());
+
+  const updateRate = (increment: boolean) => {
+    setDollarRate(prev => {
+      const newRate = increment ? prev + 0.01 : prev - 0.01;
+      return Number(newRate.toFixed(2));
+    });
+    setLastUpdate(new Date());
+  };
+
+  const stats = [
+    {
+      title: "Dolar del día",
+      value: `U$D ${dollarRate.toFixed(2)}`,
+      description: format(lastUpdate, "dd/MMM/yyyy hh:mm a").toUpperCase(),
+      icon: DollarSign,
+      trend: "none",
+      actions: (
+        <div className="flex gap-2 mt-2">
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-8 w-8"
+            onClick={() => updateRate(false)}
+          >
+            <Minus className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-8 w-8"
+            onClick={() => updateRate(true)}
+          >
+            <Plus className="h-4 w-4" />
+          </Button>
+        </div>
+      )
+    },
+    {
+      title: "Critical Stock Items",
+      value: "12",
+      description: "Items below minimum",
+      icon: AlertCircle,
+      trend: "up"
+    },
+    {
+      title: "Pending Orders",
+      value: "24",
+      description: "Active work orders",
+      icon: ShoppingCart,
+      trend: "none"
+    },
+    {
+      title: "In Production",
+      value: "8",
+      description: "Items being manufactured",
+      icon: Package,
+      trend: "down"
+    },
+    {
+      title: "Pending Deliveries",
+      value: "15",
+      description: "Orders ready to ship",
+      icon: Truck,
+      trend: "up"
+    }
+  ];
+
+  return (
+    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      {stats.map((stat) => {
+        const Icon = stat.icon;
+        return (
+          <Card key={stat.title}>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">
+                {stat.title}
+              </CardTitle>
+              <Icon className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stat.value}</div>
+              <p className="text-xs text-muted-foreground">
+                {stat.description}
+              </p>
+              {stat.actions}
+            </CardContent>
+          </Card>
+        );
+      })}
+    </div>
+  );
+}
+
