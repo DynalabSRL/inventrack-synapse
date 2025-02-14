@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -25,8 +25,6 @@ const registerSchema = z.object({
 export default function AuthPage() {
   const navigate = useNavigate();
   const { signIn, signUp, session } = useAuth();
-  const [isLoading, setIsLoading] = useState(false);
-  const [defaultValue, setDefaultValue] = useState<"login" | "register">("login");
 
   const loginForm = useForm<z.infer<typeof loginSchema>>({
     resolver: zodResolver(loginSchema),
@@ -53,26 +51,18 @@ export default function AuthPage() {
 
   async function onLoginSubmit(values: z.infer<typeof loginSchema>) {
     try {
-      setIsLoading(true);
       await signIn(values.email, values.password);
-      navigate("/");
-    } finally {
-      setIsLoading(false);
+    } catch (error) {
+      console.error("Login error:", error);
     }
   }
 
   async function onRegisterSubmit(values: z.infer<typeof registerSchema>) {
     try {
-      setIsLoading(true);
       await signUp(values.email, values.password, values.fullName);
-      navigate("/");
-    } finally {
-      setIsLoading(false);
+    } catch (error) {
+      console.error("Register error:", error);
     }
-  }
-
-  if (session) {
-    return null;
   }
 
   return (
@@ -86,12 +76,10 @@ export default function AuthPage() {
         <div className="flex-1 flex items-center justify-center">
           <Card className="w-full max-w-md">
             <CardHeader>
-              <CardTitle>
-                {defaultValue === "login" ? "Bienvenido" : "Crear una cuenta"}
-              </CardTitle>
+              <CardTitle>Bienvenido</CardTitle>
             </CardHeader>
             <CardContent>
-              <Tabs defaultValue="login" onValueChange={(v) => setDefaultValue(v as "login" | "register")}>
+              <Tabs defaultValue="login">
                 <TabsList className="grid w-full grid-cols-2">
                   <TabsTrigger value="login">Acceso</TabsTrigger>
                   <TabsTrigger value="register">Registro</TabsTrigger>
@@ -112,7 +100,6 @@ export default function AuthPage() {
                               <Input
                                 placeholder="correo@dynalab.com.ar"
                                 {...field}
-                                disabled={isLoading}
                               />
                             </FormControl>
                             <FormMessage />
@@ -129,7 +116,6 @@ export default function AuthPage() {
                               <Input
                                 type="password"
                                 {...field}
-                                disabled={isLoading}
                               />
                             </FormControl>
                             <FormMessage />
@@ -139,9 +125,8 @@ export default function AuthPage() {
                       <Button
                         type="submit"
                         className="w-full bg-black text-white hover:bg-gray-800 transition-colors"
-                        disabled={isLoading}
                       >
-                        {isLoading ? "Ingresando..." : "INGRESAR"}
+                        INGRESAR
                       </Button>
                     </form>
                   </Form>
@@ -162,7 +147,6 @@ export default function AuthPage() {
                               <Input
                                 placeholder="Juan Perez"
                                 {...field}
-                                disabled={isLoading}
                               />
                             </FormControl>
                             <FormMessage />
@@ -179,7 +163,6 @@ export default function AuthPage() {
                               <Input
                                 placeholder="correo@dynalab.com.ar"
                                 {...field}
-                                disabled={isLoading}
                               />
                             </FormControl>
                             <FormMessage />
@@ -196,7 +179,6 @@ export default function AuthPage() {
                               <Input
                                 type="password"
                                 {...field}
-                                disabled={isLoading}
                               />
                             </FormControl>
                             <FormMessage />
@@ -206,9 +188,8 @@ export default function AuthPage() {
                       <Button
                         type="submit"
                         className="w-full bg-black text-white hover:bg-gray-800 transition-colors"
-                        disabled={isLoading}
                       >
-                        {isLoading ? "Creando cuenta..." : "CREAR CUENTA"}
+                        CREAR CUENTA
                       </Button>
                     </form>
                   </Form>
