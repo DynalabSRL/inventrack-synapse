@@ -1,114 +1,229 @@
 
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Card } from "@/components/ui/card";
-import { useToast } from "@/components/ui/use-toast";
-import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useAuth } from "@/hooks/use-auth";
 
-const AuthPage = () => {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const [isSignUp, setIsSignUp] = useState(false);
+const loginSchema = z.object({
+  email: z.string().email().endsWith("@dynalab.com.ar"),
+  password: z.string().min(8)
+});
+
+const registerSchema = z.object({
+  fullName: z.string().min(2, "Nombre completo debe tener al menos 2 caracteres"),
+  email: z.string().email().endsWith("@dynalab.com.ar", "El email debe ser del dominio @dynalab.com.ar"),
+  password: z.string().min(8, "La contraseña debe tener al menos 8 caracteres")
+});
+
+export default function AuthPage() {
   const navigate = useNavigate();
-  const { toast } = useToast();
+  const { signIn, signUp, session } = useAuth();
+  const [isLoading, setIsLoading] = useState(false);
+  const [defaultValue, setDefaultValue] = useState<"login" | "register">("login");
 
-  const handleAuth = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
+  // Redirect if already logged in
+  if (session) {
+    navigate("/");
+    return null;
+  }
 
+  const loginForm = useForm<z.infer<typeof loginSchema>>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: {
+      email: "",
+      password: ""
+    }
+  });
+
+  const registerForm = useForm<z.infer<typeof registerSchema>>({
+    resolver: zodResolver(registerSchema),
+    defaultValues: {
+      fullName: "",
+      email: "",
+      password: ""
+    }
+  });
+
+  async function onLoginSubmit(values: z.infer<typeof loginSchema>) {
     try {
-      if (!email.endsWith("@dynalab.com.ar")) {
-        throw new Error("Solo se permiten correos electrónicos de @dynalab.com.ar");
-      }
-
-      const { error } = isSignUp
-        ? await supabase.auth.signUp({
-            email,
-            password,
-          })
-        : await supabase.auth.signInWithPassword({
-            email,
-            password,
-          });
-
-      if (error) throw error;
-
-      if (isSignUp) {
-        toast({
-          title: "Registro exitoso",
-          description: "Por favor, verifica tu correo electrónico para continuar.",
-        });
-      } else {
-        toast({
-          title: "¡Bienvenido!",
-          description: "Has iniciado sesión correctamente.",
-        });
-        navigate("/");
-      }
-    } catch (error: any) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: error.message,
-      });
+      setIsLoading(true);
+      await signIn(values.email, values.password);
+      navigate("/");
     } finally {
       setIsLoading(false);
     }
-  };
+  }
+
+  async function onRegisterSubmit(values: z.infer<typeof registerSchema>) {
+    try {
+      setIsLoading(true);
+      await signUp(values.email, values.password, values.fullName);
+      navigate("/");
+    } finally {
+      setIsLoading(false);
+    }
+  }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <Card className="w-full max-w-md p-6 space-y-6">
-        <div className="space-y-2 text-center">
-          <h1 className="text-2xl font-bold">DynaLab IMS</h1>
-          <p className="text-muted-foreground">
-            {isSignUp ? "Crear una nueva cuenta" : "Iniciar sesión en tu cuenta"}
-          </p>
+    <div className="min-h-screen flex">
+      <div className="w-1/2 p-10 flex flex-col">
+        <img
+          src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRZsL7MNNiBzrXCbsk6CdtsulY8xBUGGsfHKPcpa2Geq4_oZD2q"
+          alt="Dynalab Logo"
+          className="h-12 mb-12 self-start"
+        />
+        <div className="flex-1 flex items-center justify-center">
+          <Card className="w-full max-w-md">
+            <CardHeader>
+              <CardTitle>
+                {defaultValue === "login" ? "Bienvenido" : "Crear una cuenta"}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Tabs defaultValue="login" onValueChange={(v) => setDefaultValue(v as "login" | "register")}>
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="login">Acceso</TabsTrigger>
+                  <TabsTrigger value="register">Registro</TabsTrigger>
+                </TabsList>
+                <TabsContent
+                  value="login"
+                  className="data-[state=active]:animate-content-show"
+                >
+                  <Form {...loginForm}>
+                    <form onSubmit={loginForm.handleSubmit(onLoginSubmit)} className="space-y-4">
+                      <FormField
+                        control={loginForm.control}
+                        name="email"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Email</FormLabel>
+                            <FormControl>
+                              <Input
+                                placeholder="correo@dynalab.com.ar"
+                                {...field}
+                                disabled={isLoading}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={loginForm.control}
+                        name="password"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Contraseña</FormLabel>
+                            <FormControl>
+                              <Input
+                                type="password"
+                                {...field}
+                                disabled={isLoading}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <Button
+                        type="submit"
+                        className="w-full bg-black text-white hover:bg-gray-800 transition-colors"
+                        disabled={isLoading}
+                      >
+                        {isLoading ? "Ingresando..." : "INGRESAR"}
+                      </Button>
+                    </form>
+                  </Form>
+                </TabsContent>
+                <TabsContent
+                  value="register"
+                  className="data-[state=active]:animate-content-show"
+                >
+                  <Form {...registerForm}>
+                    <form onSubmit={registerForm.handleSubmit(onRegisterSubmit)} className="space-y-4">
+                      <FormField
+                        control={registerForm.control}
+                        name="fullName"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Nombre completo</FormLabel>
+                            <FormControl>
+                              <Input
+                                placeholder="Juan Perez"
+                                {...field}
+                                disabled={isLoading}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={registerForm.control}
+                        name="email"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Email</FormLabel>
+                            <FormControl>
+                              <Input
+                                placeholder="correo@dynalab.com.ar"
+                                {...field}
+                                disabled={isLoading}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={registerForm.control}
+                        name="password"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Contraseña</FormLabel>
+                            <FormControl>
+                              <Input
+                                type="password"
+                                {...field}
+                                disabled={isLoading}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <Button
+                        type="submit"
+                        className="w-full bg-black text-white hover:bg-gray-800 transition-colors"
+                        disabled={isLoading}
+                      >
+                        {isLoading ? "Creando cuenta..." : "CREAR CUENTA"}
+                      </Button>
+                    </form>
+                  </Form>
+                </TabsContent>
+              </Tabs>
+            </CardContent>
+          </Card>
         </div>
-        <form onSubmit={handleAuth} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="email">Correo electrónico</Label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="nombre@dynalab.com.ar"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="password">Contraseña</Label>
-            <Input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
-          </div>
-          <Button className="w-full" type="submit" disabled={isLoading}>
-            {isLoading ? "Procesando..." : isSignUp ? "Registrarse" : "Iniciar sesión"}
-          </Button>
-        </form>
-        <div className="text-center">
-          <button
-            type="button"
-            onClick={() => setIsSignUp(!isSignUp)}
-            className="text-sm text-primary hover:underline"
-          >
-            {isSignUp
-              ? "¿Ya tienes una cuenta? Inicia sesión"
-              : "¿No tienes una cuenta? Regístrate"}
-          </button>
+      </div>
+      <div className="w-1/2 relative bg-cover bg-center" style={{
+        backgroundImage: `url('https://png.pngtree.com/background/20230630/original/pngtree-electrical-substation-industry-electric-connect-photo-picture-image_4102513.jpg')`
+      }}>
+        <div className="absolute inset-0 bg-black/60" />
+        <div className="absolute top-1/2 left-8 transform -translate-y-1/2 text-white">
+          <h1 className="text-3xl font-bold mb-4">Sistema de Gestion - Dynalab SRL</h1>
+          <p className="text-base mb-2">2025 ® Dynalab SRL. Todos los derechos reservados.</p>
+          <p className="text-sm">Version 1.0.0</p>
         </div>
-      </Card>
+      </div>
     </div>
   );
-};
-
-export default AuthPage;
+}
