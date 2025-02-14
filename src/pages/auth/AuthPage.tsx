@@ -45,13 +45,14 @@ export default function AuthPage() {
 
   useEffect(() => {
     if (session) {
-      navigate("/");
+      navigate("/dashboard");
     }
   }, [session, navigate]);
 
   async function onLoginSubmit(values: z.infer<typeof loginSchema>) {
     try {
       await signIn(values.email, values.password);
+      navigate("/dashboard");
     } catch (error) {
       console.error("Login error:", error);
     }
@@ -60,6 +61,7 @@ export default function AuthPage() {
   async function onRegisterSubmit(values: z.infer<typeof registerSchema>) {
     try {
       await signUp(values.email, values.password, values.fullName);
+      navigate("/dashboard");
     } catch (error) {
       console.error("Register error:", error);
     }
