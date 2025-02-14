@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -45,6 +45,12 @@ export default function AuthPage() {
     }
   });
 
+  useEffect(() => {
+    if (session) {
+      navigate("/");
+    }
+  }, [session, navigate]);
+
   async function onLoginSubmit(values: z.infer<typeof loginSchema>) {
     try {
       setIsLoading(true);
@@ -65,9 +71,7 @@ export default function AuthPage() {
     }
   }
 
-  // Handle session redirect without early return
   if (session) {
-    navigate("/");
     return null;
   }
 
