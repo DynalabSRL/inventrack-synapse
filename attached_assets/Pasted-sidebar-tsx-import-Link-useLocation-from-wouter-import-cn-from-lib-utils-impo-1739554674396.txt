@@ -1,0 +1,162 @@
+sidebar.tsx:
+
+import { Link, useLocation } from "wouter";
+import { cn } from "@/lib/utils";
+import { useAuth } from "@/hooks/use-auth";
+import { useTheme } from "@/hooks/use-theme";
+import { Button } from "@/components/ui/button";
+import {
+  LayoutDashboard,
+  Box,
+  FileText,
+  Calculator,
+  Clipboard,
+  Factory,
+  Truck,
+  Users,
+  Settings,
+  LogOut,
+  Sun,
+  Moon,
+} from "lucide-react";
+import { motion } from "framer-motion";
+
+export function Sidebar() {
+  const [location] = useLocation();
+  const { session, signOut } = useAuth();
+  const { theme, setTheme } = useTheme();
+
+  const navigation = [
+    {
+      name: "Panel de Inicio",
+      href: "/dashboard",
+      icon: LayoutDashboard,
+      show: true,
+    },
+    {
+      name: "Productos",
+      href: "/products",
+      icon: Box,
+      show: true,
+    },
+    {
+      name: "Lista de Precios",
+      href: "/price-list",
+      icon: Calculator,
+      show: true,
+    },
+    {
+      name: "Cotizaciones",
+      href: "/quotes",
+      icon: FileText,
+      show: true,
+    },
+    {
+      name: "Ordenes de Trabajo",
+      href: "/work-orders",
+      icon: Clipboard,
+      show: true,
+    },
+    {
+      name: "Ordenes de Produccion",
+      href: "/production-orders",
+      icon: Factory,
+      show: true,
+    },
+    {
+      name: "Logistica",
+      href: "/logistics",
+      icon: Truck,
+      show: true,
+    },
+    {
+      name: "Usuarios",
+      href: "/users",
+      icon: Users,
+      show: session?.role === "admin",
+    },
+    {
+      name: "Configuracion",
+      href: "/settings",
+      icon: Settings,
+      show: true,
+    },
+  ];
+
+  return (
+    <motion.div
+      className={cn(
+        "sticky top-0 bg-sidebar border-r border-sidebar-border flex flex-col h-screen transition-all duration-300"
+      )}
+      initial={{ width: 80 }}
+      animate={{ width: 240 }}
+      exit={{ width: 80 }}
+      transition={{ duration: 0.3 }}
+    >
+      <div className="h-16 flex items-center px-4 border-b border-sidebar-border">
+        <div className="flex items-center gap-3 truncate">
+          <img
+            src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRZsL7MNNiBzrXCbsk6CdtsulY8xBUGGsfHKPcpa2Geq4_oZD2q"
+            alt="Dynalab Logo"
+            className="h-8 flex-shrink-0"
+          />
+          <div className="flex flex-col opacity-0 group-hover:opacity-100 transition-opacity">
+            <span className="text-sm font-medium whitespace-nowrap">Sistema de Gestión</span>
+            <span className="text-sm font-medium whitespace-nowrap">Dynalab SRL</span>
+          </div>
+        </div>
+      </div>
+
+      <nav className="flex-1 p-4 space-y-2">
+        {navigation.filter(item => item.show).map((item) => {
+          const Icon = item.icon;
+          return (
+            <Link key={item.href} href={item.href}>
+              <a
+                className={cn(
+                  "flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors",
+                  location === item.href
+                    ? "bg-black text-white hover:bg-black/90 hover:text-white"
+                    : "hover:bg-accent hover:text-accent-foreground text-sidebar-foreground"
+                )}
+              >
+                <Icon className="h-4 w-4 flex-shrink-0" />
+                <span className="whitespace-nowrap">
+                  {item.name}
+                </span>
+              </a>
+            </Link>
+          );
+        })}
+      </nav>
+
+      <div className="p-4 border-t border-sidebar-border">
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+            className="h-8 w-8"
+          >
+            {theme === "dark" ? (
+              <Sun className="h-4 w-4" />
+            ) : (
+              <Moon className="h-4 w-4" />
+            )}
+          </Button>
+          <Button
+            variant="ghost"
+            className="flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium hover:bg-accent hover:text-accent-foreground text-sidebar-foreground"
+            onClick={() => signOut()}
+          >
+            <LogOut className="h-4 w-4 flex-shrink-0" />
+            <span className="whitespace-nowrap">
+              Cerrar Sesión
+            </span>
+          </Button>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
